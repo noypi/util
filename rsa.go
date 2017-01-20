@@ -1,6 +1,7 @@
 package util
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -8,7 +9,11 @@ import (
 	"encoding/pem"
 )
 
+// implements default encrypt/decrypt using rsa,
+// will not sign
+
 type PrivKey rsa.PrivateKey
+type PubKey rsa.PublicKey
 
 func GenPrivKey(bits int) (*PrivKey, error) {
 	privk, err := rsa.GenerateKey(rand.Reader, bits)
@@ -17,6 +22,10 @@ func GenPrivKey(bits int) (*PrivKey, error) {
 
 func (this *PrivKey) Marshal() []byte {
 	return x509.MarshalPKCS1PrivateKey((*rsa.PrivateKey)(this))
+}
+
+func (this *PrivKey) PubKey() *PubKey {
+	return (*PubKey)(&((*rsa.PrivateKey)(this).PublicKey))
 }
 
 func (this *PrivKey) MarshalPem() []byte {
@@ -43,15 +52,36 @@ func (this PrivKey) MarshalPublicKeyPem() ([]byte, error) {
 	}), nil
 }
 
-func ParsePublickeyPem(bbPem []byte) (*rsa.PublicKey, error) {
+func ParsePublickeyPem(bbPem []byte) (*PubKey, error) {
 	block, _ := pem.Decode(bbPem)
 	pubKif, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if nil != err {
 		return nil, err
 	}
-	return pubKif.(*rsa.PublicKey), nil
+	return (*PubKey)(pubKif.(*rsa.PublicKey)), nil
 }
 
-func EncryptUsingPubKey(bb []byte, pubk *rsa.PublicKey) ([]byte, error) {
-	return rsa.EncryptOAEP(sha256.New(), rand.Reader, pubk, bb, []byte(""))
+func (this *PrivKey) Decrypt(bb []byte) ([]byte, error) {
+	return rsa.DecryptOAEP(sha256.New(), rand.Reader, (*rsa.PrivateKey)(this), bb, []byte(""))
+}
+
+func (this *PubKey) Encrypt(bb []byte) ([]byte, error) {
+	return rsa.EncryptOAEP(sha256.New(), rand.Reader, (*rsa.PublicKey)(this), bb, []byte(""))
+}
+
+func (mypriv *PrivKey) Sign(bb []byte) (signature []byte, err error) {
+	h := sha256.New()
+	h.Write(bb)
+	signature, err = rsa.SignPSS(rand.Reader, (*rsa.PrivateKey)(mypriv), crypto.SHA256, h.Sum(nil), &rsa.PSSOptions{
+		SaltLength: rsa.PSSSaltLengthAuto,
+	})
+	return
+}
+
+func (hisPubK *PubKey) Verify(msg, signature []byte) error {
+	h := sha256.New()
+	h.Write(msg)
+	return rsa.VerifyPSS((*rsa.PublicKey)(hisPubK), crypto.SHA256, h.Sum(nil), signature, &rsa.PSSOptions{
+		SaltLength: rsa.PSSSaltLengthAuto,
+	})
 }
