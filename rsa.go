@@ -35,14 +35,13 @@ func (this *PrivKey) MarshalPem() []byte {
 	})
 }
 
-func (this *PrivKey) MarshalPublicKey() (bbPub []byte, err error) {
-	pubk := &((*rsa.PrivateKey)(this).PublicKey)
-	bbPub, err = x509.MarshalPKIXPublicKey(pubk)
+func (this *PubKey) Marshal() (bbPub []byte, err error) {
+	bbPub, err = x509.MarshalPKIXPublicKey((*rsa.PublicKey)(this))
 	return
 }
 
-func (this PrivKey) MarshalPublicKeyPem() ([]byte, error) {
-	bb, err := this.MarshalPublicKey()
+func (this *PubKey) MarshalPem() ([]byte, error) {
+	bb, err := this.Marshal()
 	if nil != err {
 		return nil, err
 	}
@@ -52,13 +51,17 @@ func (this PrivKey) MarshalPublicKeyPem() ([]byte, error) {
 	}), nil
 }
 
-func ParsePublickeyPem(bbPem []byte) (*PubKey, error) {
-	block, _ := pem.Decode(bbPem)
-	pubKif, err := x509.ParsePKIXPublicKey(block.Bytes)
+func ParsePublickey(bb []byte) (*PubKey, error) {
+	pubKif, err := x509.ParsePKIXPublicKey(bb)
 	if nil != err {
 		return nil, err
 	}
 	return (*PubKey)(pubKif.(*rsa.PublicKey)), nil
+}
+
+func ParsePublickeyPem(bbPem []byte) (*PubKey, error) {
+	block, _ := pem.Decode(bbPem)
+	return ParsePublickey(block.Bytes)
 }
 
 func (this *PrivKey) Decrypt(bb []byte) ([]byte, error) {
