@@ -6,7 +6,7 @@ import (
 	"github.com/noypi/util"
 )
 
-func Example() {
+func ExamplePrivKey() {
 	// sender's keys
 	privkSender, _ := util.GenPrivKey(2048)
 	pubkSender := privkSender.PubKey()

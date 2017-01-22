@@ -9,9 +9,6 @@ import (
 	"encoding/pem"
 )
 
-// implements default encrypt/decrypt using rsa,
-// will not sign
-
 type PrivKey rsa.PrivateKey
 type PubKey rsa.PublicKey
 
