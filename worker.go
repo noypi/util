@@ -27,16 +27,27 @@ func (this *WorkerPool) Start(maxWorkers int) {
 		worker := new(_worker)
 		worker.pool = this.pool
 		worker.task = make(chan func(), 1)
-		worker.quit = make(chan struct{}, 1)
+		worker.quit = make(chan struct{})
 		this.workers[i] = worker
 		go worker.waitForJob()
 	}
 }
 
+func (this *WorkerPool) QuitWait() {
+	this.quit()
+}
+
 func (this *WorkerPool) Quit() {
+	go this.quit()
+}
+
+func (this *WorkerPool) quit() {
 	for _, worker := range this.workers {
 		worker.quit <- struct{}{}
+		close(worker.task)
+		close(worker.quit)
 	}
+	close(this.pool)
 }
 
 func (this *WorkerPool) AddWork(task func()) (err error) {
