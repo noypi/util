@@ -10,6 +10,7 @@ import (
 
 func SplitSep2(s, sep string) string {
 	buf := bytes.NewBufferString("")
+	buf.Grow(len(s) + (len(s) / 2))
 	for i, c := range s {
 		if 0 != i && 0 == (i&1) {
 			buf.WriteRune(':')
