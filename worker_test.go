@@ -24,7 +24,7 @@ func TestWorkerPool(t *testing.T) {
 			info.begin = time.Now()
 			info.id = uuid.NewV4().String()
 			time.Sleep(300 * time.Millisecond)
-			t.Log("id=", info.id)
+			//t.Log("id=", info.id)
 			time.Sleep(300 * time.Millisecond)
 			info.end = time.Now()
 		}
@@ -41,9 +41,9 @@ func TestWorkerPool(t *testing.T) {
 	pool.Quit()
 
 	assert.NotEqual(works[0].id, works[1].id, "ids should not be equal0")
-	t.Log("begin diff=", works[1].begin.Sub(works[0].begin), ", begin0=", works[0].begin)
+	//t.Log("begin diff=", works[1].begin.Sub(works[0].begin), ", begin0=", works[0].begin)
 	assert.True((150 * time.Millisecond) < works[1].begin.Sub(works[0].begin))
-	t.Log("end diff=", works[1].end.Sub(works[0].end), ",end0=", works[0].end)
+	//t.Log("end diff=", works[1].end.Sub(works[0].end), ",end0=", works[0].end)
 	assert.True((150 * time.Millisecond) < works[1].end.Sub(works[0].end))
 
 	// less than 600ms (work time)
