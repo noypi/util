@@ -20,7 +20,7 @@ func SplitSep2(s, sep string) string {
 }
 
 func ToHex(bb []byte) string {
-	return fmt.Sprintf("%s", bb)
+	return fmt.Sprintf("%x", bb)
 }
 
 func Sha256(bb []byte) []byte {
