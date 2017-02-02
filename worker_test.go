@@ -37,8 +37,8 @@ func TestWorkerPool(t *testing.T) {
 		pool.AddWork(newWork(works[i]))
 		time.Sleep(200 * time.Millisecond)
 	}
-	time.Sleep(600 * time.Millisecond)
-	pool.Quit()
+	//time.Sleep(600 * time.Millisecond)
+	pool.QuitWait()
 
 	assert.NotEqual(works[0].id, works[1].id, "ids should not be equal0")
 	//t.Log("begin diff=", works[1].begin.Sub(works[0].begin), ", begin0=", works[0].begin)
