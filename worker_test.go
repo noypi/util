@@ -45,4 +45,8 @@ func TestWorkerPool(t *testing.T) {
 	assert.True((150 * time.Millisecond) < works[1].begin.Sub(works[0].begin))
 	t.Log("end diff=", works[1].end.Sub(works[0].end), ",end0=", works[0].end)
 	assert.True((150 * time.Millisecond) < works[1].end.Sub(works[0].end))
+
+	// less than 600ms (work time)
+	// and more than 200ms in between add work
+	assert.True(works[1].end.Sub(works[0].end) < (210 * time.Millisecond))
 }
