@@ -78,10 +78,51 @@ func (mypriv *PrivKey) Sign(bb []byte) (signature []byte, err error) {
 	return
 }
 
+func (hisPubK *PubKey) DigiPrint() string {
+	bb, _ := hisPubK.Marshal()
+	return DigiPrint(ToHex(Sha256(bb)))
+}
+
 func (hisPubK *PubKey) Verify(msg, signature []byte) error {
 	h := sha256.New()
 	h.Write(msg)
 	return rsa.VerifyPSS((*rsa.PublicKey)(hisPubK), crypto.SHA256, h.Sum(nil), signature, &rsa.PSSOptions{
 		SaltLength: rsa.PSSSaltLengthAuto,
 	})
+}
+
+type SignedMessage struct {
+	Message   []byte
+	Signature []byte
+}
+
+func (mypriv *PrivKey) SignMessage(bb []byte) (msg *SignedMessage, err error) {
+	msg = new(SignedMessage)
+	msg.Message = bb
+	msg.Signature, err = mypriv.Sign(bb)
+	return
+}
+
+func (mypriv *PrivKey) SignMessageAndMarshal(bb []byte) ([]byte, error) {
+	msg, err := mypriv.SignMessage(bb)
+	if nil != err {
+		return nil, err
+	}
+	return SerializeGob(msg)
+}
+
+func (hisPubK *PubKey) VerifyMessage(msg *SignedMessage) (err error) {
+	return hisPubK.Verify(msg.Message, msg.Signature)
+}
+
+func (hisPubK *PubKey) VerifyMessageRaw(bb []byte) (msg []byte, err error) {
+	var signedmsg SignedMessage
+	if err = DeserializeGob(&signedmsg, bb); nil != err {
+		return
+	}
+	if err = hisPubK.VerifyMessage(&signedmsg); nil != err {
+		return
+	}
+	msg = signedmsg.Message
+	return
 }

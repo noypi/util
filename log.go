@@ -19,12 +19,6 @@ const (
 	LogInfoName
 )
 
-func ToLnLogger(fn LogFunc) func(...interface{}) {
-	return func(as ...interface{}) {
-		fn("%s", fmt.Sprintln(as...))
-	}
-}
-
 func WithErrLogger(ctx context.Context, fn LogFunc) context.Context {
 	return context.WithValue(ctx, LogErrName, fn)
 }
@@ -58,17 +52,29 @@ func LogInfo(ctx context.Context, fmt string, params ...interface{}) {
 	GetInfoLog(ctx)(fmt, params...)
 }
 
-func LogDump(fn LogFunc, n int) {
-	calls := retrieveCallInfos(n)
+func StackTrace(n int) string {
+	// purposely create _stackTrace, we wanted to pass 'j'
+	return _stackTrace(n, 4)
+}
+
+func (this LogFunc) PrintStackTrace(n int) {
+	this("%s", _stackTrace(n, 4))
+}
+
+func (this LogFunc) Ln(as ...interface{}) {
+	this("%s", fmt.Sprintln(as...))
+}
+
+func _stackTrace(n, j int) string {
+	calls := retrieveCallInfos(n, j)
 	sb := bytes.NewBufferString("")
 	for _, v := range calls {
 		if nil != v {
 			sb.WriteString(v.verboseFormat())
-			sb.WriteString("\n")
+			sb.WriteString("\n\t")
 		}
 	}
-	sb.WriteString("\n\n")
-	fn("%s", sb.String())
+	return sb.String()
 }
 
 //--------------------
@@ -97,10 +103,10 @@ func (ci *_callInfo) verboseFormat() string {
 }
 
 // retrieveCallInfo
-func retrieveCallInfos(ns int) (calls []*_callInfo) {
-	calls = make([]*_callInfo, ns+3)
-	for i := 3; i < len(calls); i++ {
-		c := retrieveCallInfo(i)
+func retrieveCallInfos(ns, j int) (calls []*_callInfo) {
+	calls = make([]*_callInfo, ns)
+	for i := 0; i < len(calls); i++ {
+		c := retrieveCallInfo(j + i)
 		if nil == c {
 			break
 		}

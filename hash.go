@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"crypto/sha512"
-	"fmt"
 	"hash"
 )
 
-func SplitSep2(s, sep string) string {
+func DigiPrint(s string) string {
 	buf := bytes.NewBufferString("")
 	buf.Grow(len(s) + (len(s) / 2))
 	for i, c := range s {
@@ -18,10 +17,6 @@ func SplitSep2(s, sep string) string {
 		buf.WriteRune(c)
 	}
 	return buf.String()
-}
-
-func ToHex(bb []byte) string {
-	return fmt.Sprintf("%x", bb)
 }
 
 func Sha256(bb []byte) []byte {

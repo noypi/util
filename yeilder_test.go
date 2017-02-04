@@ -6,11 +6,11 @@ import (
 	assertpkg "github.com/stretchr/testify/assert"
 )
 
-func TestYeildArr(t *testing.T) {
+func TestYeilderArr(t *testing.T) {
 	assert := assertpkg.New(t)
 
 	ns := []interface{}{0, 1, 2, 3, 4, 5}
-	fn := YieldArr(ns)
+	fn := YielderArr(ns)
 	for i := 0; i < len(ns); i++ {
 		b, ok := fn()
 		assert.True(ok)
