@@ -54,8 +54,6 @@ func (pipes Pipelines) RunAsyncOut(in, out chan interface{}, size int) (cleanup 
 	go pipeline_forward(chs[len(chs)-1], out)
 
 	return func() {
-		//remove out
-		chs = chs[:len(chs)-1]
 		//exclude in
 		for _, ch := range chs[1:] {
 			close(ch)
