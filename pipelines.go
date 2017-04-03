@@ -30,6 +30,12 @@ func (pipes Pipelines) Run(in chan interface{}, size int) (out interface{}) {
 
 }
 
+func pipeline_forward(in, out chan interface{}) {
+	for v := range in {
+		out <- v
+	}
+}
+
 func (pipes Pipelines) RunAsyncOut(in, out chan interface{}, size int) (cleanup func()) {
 	if 0 >= size {
 		size = 1
@@ -45,12 +51,7 @@ func (pipes Pipelines) RunAsyncOut(in, out chan interface{}, size int) (cleanup 
 		go pipes[i](chs[i], chs[j])
 	}
 
-	go func() {
-		ch := chs[len(chs)-1]
-		for v := range ch {
-			out <- v
-		}
-	}()
+	go pipeline_forward(chs[len(chs)-1], out)
 
 	return func() {
 		//remove out
