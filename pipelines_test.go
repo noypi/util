@@ -28,7 +28,7 @@ func TestPipelines(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		answer = Run(Pipelines{pipe1, pipe2}, ch).(int)
+		answer = (Pipelines{pipe1, pipe2}).Run(ch, 1).(int)
 		wg.Done()
 	}()
 
