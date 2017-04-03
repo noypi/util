@@ -38,3 +38,20 @@ func TestPipelines(t *testing.T) {
 	wg.Wait()
 	assert.Equal(answer, 8)
 }
+
+func TestPipelinesAsyncOut(t *testing.T) {
+	assert := assertpkg.New(t)
+
+	in := make(chan interface{}, 1)
+	out := make(chan interface{}, 1)
+
+	cleanup := (Pipelines{pipe1, pipe2}).RunAsyncOut(in, out, 1)
+	in <- 3
+	close(in)
+
+	answer := <-out
+	assert.Equal(8, answer.(int))
+	close(out)
+
+	cleanup()
+}

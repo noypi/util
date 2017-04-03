@@ -3,7 +3,7 @@
 */
 package util
 
-type Pipeline func(in chan interface{}, out chan interface{})
+type Pipeline func(in, out chan interface{})
 
 type Pipelines []Pipeline
 
@@ -27,5 +27,38 @@ func (pipes Pipelines) Run(in chan interface{}, size int) (out interface{}) {
 	}
 
 	return
+
+}
+
+func (pipes Pipelines) RunAsyncOut(in, out chan interface{}, size int) (cleanup func()) {
+	if 0 >= size {
+		size = 1
+	}
+
+	// create temp channels
+	chs := append([]chan interface{}{in}, make([]chan interface{}, len(pipes))...)
+	for i := 1; i < len(chs); i++ {
+		chs[i] = make(chan interface{}, size)
+	}
+
+	for i, j := 0, 1; j < len(chs); i, j = i+1, j+1 {
+		go pipes[i](chs[i], chs[j])
+	}
+
+	go func() {
+		ch := chs[len(chs)-1]
+		for v := range ch {
+			out <- v
+		}
+	}()
+
+	return func() {
+		//remove out
+		chs = chs[:len(chs)-1]
+		//exclude in
+		for _, ch := range chs[1:] {
+			close(ch)
+		}
+	}
 
 }
