@@ -34,11 +34,11 @@ func Hash(bb []byte, h hash.Hash) []byte {
 }
 
 func SaltedHash256(data, salt []byte) (hash, outSalt []byte) {
-	return Sha256(append(data, salt...)), salt
+	return Sha256(append(salt, data...)), salt
 }
 
 func SaltedHash512(data, salt []byte) (hash, outSalt []byte) {
-	return Sha512(append(data, salt...)), salt
+	return Sha512(append(salt, data...)), salt
 }
 
 func GenSalt(size int) []byte {
