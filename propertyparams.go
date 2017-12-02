@@ -4,14 +4,23 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/steveyen/gtreap"
 )
 
-type Params map[string]string
+type Params struct {
+	m *gtreap.Treap
+}
+type _paramsItem struct {
+	k string
+	v interface{}
+}
 
-func ReadPropertyFile(fpath string) (o Params, err error) {
+func ReadPropertyFile(fpath string) (o *Params, err error) {
 	f, err := os.Open(fpath)
 	if nil != err {
 		return
@@ -22,8 +31,8 @@ func ReadPropertyFile(fpath string) (o Params, err error) {
 }
 
 // key / value separated by '='
-func ReadPropertyParams(rdr io.Reader) (o Params, err error) {
-	o = Params{}
+func ReadPropertyParams(rdr io.Reader) (o *Params, err error) {
+	o = newParams()
 	rb := bufio.NewReader(rdr)
 	sep := []byte{'='}
 	var namespaces []string
@@ -60,8 +69,7 @@ func ReadPropertyParams(rdr io.Reader) (o Params, err error) {
 			}
 
 			o.For(srcNs, func(k, v string) {
-				k = strings.TrimPrefix(k, srcNs)
-				o[ns[0:len(ns)-1]+k] = v
+				o.setValue(ns[0:len(ns)-1]+k, v)
 			})
 
 			continue
@@ -124,9 +132,9 @@ func ReadPropertyParams(rdr io.Reader) (o Params, err error) {
 		}
 
 		if bIsEnvVar {
-			o[k] = v
+			o.setValue(k, v)
 		} else {
-			o[strings.ToLower(k)] = v
+			o.setValue(strings.ToLower(k), v)
 		}
 	}
 
@@ -157,35 +165,42 @@ func (this Params) GetFloat64(s string, defval float64) float64 {
 	return n
 }
 
-func (this Params) getValue(s string, defaultValue interface{}) interface{} {
-	v, has := this[strings.ToLower(s)]
-	if !has {
-		return defaultValue
-	}
-
-	return v
+func (this *Params) setValue(k string, v interface{}) {
+	this.m = this.m.Upsert(&_paramsItem{k: k, v: v}, rand.Int())
 }
 
-func (this Params) Merge(a Params) {
-	for k, v := range a {
-		if '$' == k[0] {
-			continue
-		}
-		this[k] = os.Expand(v, this.Env)
+func (this Params) getValue(s string, defaultValue interface{}) interface{} {
+	o := this.m.Get(&_paramsItem{k: s})
+	if gtreap.Item(nil) == o {
+		return defaultValue
 	}
+	return o.(*_paramsItem).v
+}
+
+func (this *Params) Merge(a *Params) {
+	a.m.VisitAscend(&_paramsItem{k: ""}, func(v gtreap.Item) bool {
+		o := v.(*_paramsItem)
+		if '$' == o.k[0] {
+			return true
+		}
+		this.setValue(o.k, os.Expand(o.v.(string), this.Env))
+		return true
+	})
 }
 
 func (this Params) For(prefix string, cb func(k, v string)) {
-	for k, v := range this {
-		if strings.HasPrefix(k, prefix) {
-			cb(k, v)
+	this.m.VisitAscend(&_paramsItem{k: prefix}, func(v gtreap.Item) bool {
+		o := v.(*_paramsItem)
+		if '$' == o.k[0] {
+			return true
 		}
-	}
+		cb(strings.TrimLeft(strings.Replace(o.k, prefix, "", 1), ","), o.v.(string))
+		return true
+	})
 }
 
 func (this Params) Env(k string) string {
-	s, _ := this["$"+k]
-	return s
+	return this.Get("$"+k, "")
 }
 
 func countPrefix(s []byte, c byte) int {
@@ -195,4 +210,12 @@ func countPrefix(s []byte, c byte) int {
 		}
 	}
 	return 0
+}
+
+func newParams() *Params {
+	return &Params{
+		m: gtreap.NewTreap(func(a, b interface{}) int {
+			return strings.Compare(a.(*_paramsItem).k, b.(*_paramsItem).k)
+		}),
+	}
 }

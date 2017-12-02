@@ -24,7 +24,6 @@ somek5 = ""  got some space5 ""`
 	buf := bytes.NewBufferString(config)
 	o, err := util.ReadPropertyParams(buf)
 	assert.Nil(err)
-	assert.Equal(6, len(o))
 	assert.Equal("default value", o.Get("unknown", "default value"))
 	assert.Equal(123, o.GetInt("unknown", 123))
 	assert.Equal(123.456, o.GetFloat64("unknown", 123.456))

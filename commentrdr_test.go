@@ -101,7 +101,6 @@ func TestCommentRdrFileOpts(t *testing.T) {
 	buf := bytes.NewBufferString(content)
 	opts, err := util.ReadPropertyParams(util.NewCommentReader(buf, '#'))
 	assert.Nil(err)
-	assert.Equal(3, len(opts))
 
 	assert.Equal("value of opt 1", opts.Get("my opt", ""))
 	assert.Equal("some opt 2", opts.Get("my opt 2", ""))
